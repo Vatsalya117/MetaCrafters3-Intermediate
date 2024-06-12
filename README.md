@@ -1,106 +1,96 @@
-# Creating a SimpleWallet Smart Contract
-
-The `SimpleWallet` is a Solidity smart contract that allows an owner to manage Ether deposits and withdrawals. It includes functionality for depositing Ether, withdrawing specified amounts, checking the balance, and withdrawing all funds.
+# Auction House Contract
+The AuctionHouse is a Solidity smart contract that allows users to create auctions, bid on items, and view the highest bidder. It includes functionality for creating new auctions, placing bids, closing auctions, and viewing auction results.
 
 ## Features
-
-- **Owner Management**: Only the contract owner can withdraw funds.
-- **Ether Deposits**: Anyone can deposit Ether into the contract.
-- **Ether Withdrawals**: The owner can withdraw specified amounts or all Ether from the contract.
-- **Balance Checks**: Anyone can check the contract's Ether balance.
-- **Error Handling**: Demonstrates the use of `require()`, `assert(),` and `revert()` for safety checks and error handling.
-
+### Auction Creation:
+Users can create new auctions with a specified item and starting price.
+#### Bidding: 
+Users can place bids on open auctions, with the highest bidder being updated in real-time.
+#### Auction Closure: 
+Auctions can be closed, and the highest bidder declared the winner.
+#### Auction Results: 
+The contract provides a way to view the results of closed auctions, including the winning bidder and bid amount.
+#### Error Handling: 
+Demonstrates the use of require() and modifier for safety checks and error handling.
 ## Events
 
-- **Deposit**: Emitted when Ether is deposited into the contract.
-  - `depositor`: The address of the depositor.
-  - `depositAmount`: The amount of Ether deposited.
-
-- **Withdraw**: Emitted when Ether is withdrawn from the contract.
-  - `withdrawer`: The address of the withdrawer.
-  - `withdrawAmount`: The amount of Ether withdrawn.
-
-## Functions
-
-### Constructor
-
-```solidity
+#### NewAuction: Emitted when a new auction is created.
+``auctionId: The ID of the new auction.
+item: The item being auctioned.
+startPrice: The starting price of the auction.
+BidPlaced: Emitted when a bid is placed on an auction.
+``
+#### bidder: The address of the bidder.
+``auctionId: The ID of the auction being bid on.
+bid: The amount of the bid.
+AuctionResult: Emitted when an auction is closed.
+``
+#### auctionId: The ID of the closed auction.
+``winner: The address of the winning bidder.
+winningBid: The winning bid amount.
+``
+### Functions
+#### Constructor
+``solidity
 constructor() {
-    walletOwner = msg.sender; // Set the contract deployer as the owner
-    walletBalance = 0;
+    auctionCount = 0;
 }
-```
-## Modifiers 
+``
+### Create Auction
+``function
+    auctionCount++;
+    auctions[auctionCount] = Auction(item, startPrice, 0, address(0), true);
+    emit NewAuction(auctionCount, item, startPrice);
+}``` 
 
-### onlyOwner
+Allows users to create new auctions with a specified item and starting price.
 
-```modifier onlyOwner() {
-    require(msg.sender == walletOwner, "Caller is not the owner");
-    _;
+### Place Bid
+``function
+    require(bid > auctions[auctionId].highestBid, "Bid must be higher than the current highest bid");
+    auctions[auctionId].highestBid = bid;
+    auctions[auctionId].highestBidder = msg.sender;
+    bidderBids[msg.sender] = auctionId;
+    emit BidPlaced(msg.sender, auctionId, bid);
 }
-```
-Ensures that the caller is the contract owner.
+``
 
-### Deposit Ether
-```function deposit() public payable {
-    require(msg.value > 0, "Deposit amount must be greater than zero");
-    
-    walletBalance += msg.value;
-    emit Deposit(msg.sender, msg.value);
+Allows users to place bids on open auctions, with the highest bidder being updated in real-time.
+
+### Close Auction
+``function
+    auctions[auctionId].isOpen = false;
+    emit AuctionResult(auctionId, auctions[auctionId].highestBidder, auctions[auctionId].highestBid);
 }
-```
-Allows anyone to deposit Ether into the contract. The deposit amount must be greater than zero.
+``
 
-### Withdraw Ether
-```function withdraw(uint256 withdrawAmount) public onlyOwner {
-    require(withdrawAmount <= walletBalance, "Insufficient balance in the contract");
+Allows users to close auctions, declaring the highest bidder the winner.
 
-    walletBalance -= withdrawAmount;
-    payable(msg.sender).transfer(withdrawAmount);
-    emit Withdraw(msg.sender, withdrawAmount);
+### View Auction Results
+``function
+    return (auctions[auctionId].highestBidder, auctions[auctionId].highestBid);
 }
-```
-Allows the owner to withdraw a specified amount of Ether from the contract. The amount must not exceed the contract's balance.
+``
 
-### Check Balance
-```function checkWalletBalance() public view returns (uint256) {
-    assert(walletBalance >= 0); // Ensure the balance is never negative
-    return walletBalance;
-}
-```
-Returns the current Ether balance of the contract. Ensures the balance is never negative using assert().
-
-### Force Revert
-```function forceRevert() public pure {
-    revert("This function always reverts");
-}
-```
-Demonstrates the use of revert() by always reverting the transaction with a custom error message.
-
-### Withdraw All Ether
-```function withdrawAll() public onlyOwner {
-    uint256 amount = walletBalance;
-    walletBalance = 0;
-    payable(walletOwner).transfer(amount);
-    emit Withdraw(walletOwner, amount);
-}
-```
-Allows the owner to withdraw all Ether from the contract, setting the balance to zero.
+Allows users to view the results of closed auctions, including the winning bidder and bid amount.
 
 ## Usage
-Deploy the SimpleWallet contract to an Ethereum-compatible blockchain.
+Deploy the AuctionHouse contract to an Ethereum-compatible blockchain.
 
 Interact with the contract using a web3-enabled browser or a dApp interface.
 
-Use the deposit function to send Ether to the contract.
+Use the createAuction function to create new auctions.
 
-Use the withdraw or withdrawAll functions to retrieve Ether from the contract (owner only).
+Use the placeBid function to bid on open auctions.
+
+Use the closeAuction function to close auctions and declare winners.
+
+Use the viewAuctionResult function to view the results of closed auctions.
 
 ## Help
 If you encounter any issues or have questions, please refer to the documentation or contact the contributors:
 
 ## Authors
-
 Vatsalya Mishra
 
 https://github.com/Vatsalya117
