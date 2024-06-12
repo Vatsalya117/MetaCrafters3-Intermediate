@@ -1,0 +1,66 @@
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.0;
+
+contract AuctionHouse {
+    // Mapping of auctions to their details
+    mapping (uint256 => Auction) public auctions;
+
+    // Mapping of bidders to their bids
+    mapping (address => uint256) public bidderBids;
+
+    // Event to log new auctions
+    event NewAuction(uint256 auctionId, string item, uint256 startPrice);
+
+    // Event to log bids
+    event BidPlaced(address bidder, uint256 auctionId, uint256 bid);
+
+    // Event to log auction results
+    event AuctionResult(uint256 auctionId, address winner, uint256 winningBid);
+
+    // Struct to represent an auction
+    struct Auction {
+        string item;
+        uint256 startPrice;
+        uint256 highestBid;
+        address highestBidder;
+        bool isOpen;
+    }
+
+    // Auction counter
+    uint256 public auctionCount;
+
+    // Modifier to check if an auction is open
+    modifier onlyOpenAuction(uint256 auctionId) {
+        require(auctions[auctionId].isOpen, "Auction is not open");
+        _;
+    }
+
+    // Modifier to check if a bidder has not bid on an auction
+    modifier notBidOnAuction(uint256 auctionId) {
+        require(bidderBids[msg.sender] != auctionId, "You have already bid on this auction");
+        _;
+    }
+
+    // Function to create a new auction
+    function createAuction(string memory item, uint256 startPrice) public {
+        auctionCount++;
+        auctions[auctionCount] = Auction(item, startPrice, 0, address(0), true);
+        emit NewAuction(auctionCount, item, startPrice);
+    }
+
+    // Function to place a bid on an auction
+    function placeBid(uint256 auctionId, uint256 bid) public onlyOpenAuction(auctionId) notBidOnAuction(auctionId) {
+        require(bid > auctions[auctionId].highestBid, "Bid must be higher than the current highest bid");
+        auctions[auctionId].highestBid = bid;
+        auctions[auctionId].highestBidder = msg.sender;
+        bidderBids[msg.sender] = auctionId;
+        emit BidPlaced(msg.sender, auctionId, bid);
+    }
+
+    // Function to close an auction and view the result
+    function closeAuction(uint256 auctionId) public onlyOpenAuction(auctionId) {
+        auctions[auctionId].isOpen = false;
+        emit AuctionResult(auctionId, auctions[auctionId].highestBidder, auctions[auctionId].highestBid);
+    }
+}
